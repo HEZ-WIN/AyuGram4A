@@ -41,7 +41,7 @@ jobs:
         run: ./gradlew assembleAfatRelease --no-daemon
 
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: AyuGram-unsigned
           path: TMessagesProj/build/outputs/apk/afat/release/*.apk
