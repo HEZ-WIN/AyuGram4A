@@ -4,12 +4,22 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest   # Hosted runner
     steps:
-      - uses: actions/checkout@v3   # token yok, public repo için yeterli
+      # Repo'yu çek
+      - uses: actions/checkout@v3
 
+      # gradlew çalıştırılabilir yap
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # Dummy değerlerle buildConfigField hatalarını önlemek için geçici Gradle modifikasyonu
+      - name: Patch build.gradle for dummy values
+        run: |
+          sed -i 's/\(buildConfigField "String", "APP_HASH",\).*/\1 "\"DUMMY_HASH\""/' TMessagesProj/build.gradle || true
+          sed -i 's/\(buildConfigField "int", "APP_ID",\).*/\1 0/' TMessagesProj/build.gradle || true
+          sed -i 's/\(buildConfigField "String", "MAPS_V2_API",\).*/\1 "\"DUMMY_KEY\""/' TMessagesProj/build.gradle || true
+
+      # Build
       - name: Build with Gradle
-        run: ./gradlew assembleAfatRelease
+        run: ./gradlew assembleAfatRelease --no-daemon
