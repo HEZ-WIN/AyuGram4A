@@ -4,19 +4,21 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest   # burayı self-hosted yerine ubuntu-latest yapıyoruz
+    runs-on: ubuntu-latest   # self-hosted yerine GitHub hosted runner
     env:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
       CCACHE_MAXSIZE: "10G"
       CCACHE_HARDLINK: "true"
     steps:
+      # Repo’yu çek
       - uses: actions/checkout@v3
         with:
           submodules: recursive
           fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
 
+      # API key ve signing bilgilerini oluştur
       - uses: DamianReeves/write-file-action@master
         with:
           path: ./API_KEYS
@@ -30,6 +32,7 @@ jobs:
             SIGNING_KEY_STORE_PASSWORD = ${{ secrets.CERT_KEY }}
           write-mode: overwrite
 
+      # Java kurulumu
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
@@ -37,6 +40,7 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      # Gradle cache
       - name: Cache Gradle Build
         uses: actions/cache@v3
         with:
@@ -47,17 +51,21 @@ jobs:
           restore-keys: |
             gradle-builds
 
+      # Android SDK kurulumu
       - name: Setup Android SDK Tools
         uses: android-actions/setup-android@v2
 
+      # gradlew çalıştırılabilir yap
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # Build
       - name: Build with Gradle
         run: ./gradlew assembleAfatRelease
 
-    - name: Upload
-  uses: actions/upload-artifact@v4
-  with:
-    name: Release APK
-    path: TMessagesProj/build/outputs/apk/afat/release/*.apk
+      # Artifact yükleme (v4 güncel)
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Release APK
+          path: TMessagesProj/build/outputs/apk/afat/release/*.apk
