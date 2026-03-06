@@ -1,25 +1,47 @@
-name: Build release APK
+
+name: Build APK
+
 on:
   push:
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest   # Hosted runner
+    runs-on: ubuntu-latest
     steps:
-      # Repo'yu çek
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
 
-      # gradlew çalıştırılabilir yap
-      - name: Grant execute permission for gradlew
+      - uses: DamianReeves/write-file-action@master
+        with:
+          path: ./API_KEYS
+          contents: |
+            APP_ID = 6
+            APP_HASH = "eb06d4abfb49dc3eeb1aeb98ae0f581e"
+            MAPS_V2_API = somekey
+          write-mode: overwrite
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Grant execute permission
         run: chmod +x gradlew
 
-      # Dummy değerlerle buildConfigField hatalarını önlemek için geçici Gradle modifikasyonu
-      - name: Patch build.gradle for dummy values
-        run: |
-          sed -i 's/\(buildConfigField "String", "APP_HASH",\).*/\1 "\"DUMMY_HASH\""/' TMessagesProj/build.gradle || true
-          sed -i 's/\(buildConfigField "int", "APP_ID",\).*/\1 0/' TMessagesProj/build.gradle || true
-          sed -i 's/\(buildConfigField "String", "MAPS_V2_API",\).*/\1 "\"DUMMY_KEY\""/' TMessagesProj/build.gradle || true
-
-      # Build
-      - name: Build with Gradle
+      - name: Build APK
         run: ./gradlew assembleAfatRelease --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: AyuGram-unsigned
+          path: TMessagesProj/build/outputs/apk/afat/release/*.apk
